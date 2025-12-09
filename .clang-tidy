@@ -1,0 +1,20 @@
+# .clang-tidy
+---
+# 开启的检查项
+Checks: >
+  -*,
+  bugprone-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  portability-*,
+  google-*,
+  -google-runtime-references,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length
+
+# 将警告视为错误 
+WarningsAsErrors: '*'
+
+# 头文件过滤正则表达式 
+HeaderFilterRegex: 'src/.*'

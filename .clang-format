@@ -1,0 +1,27 @@
+# .clang-format
+---
+Language:        Cpp
+BasedOnStyle:    Google
+
+# 允许 C++20 的一些特性
+Standard:        c++20
+
+# 缩进宽度
+IndentWidth:     2
+TabWidth:        2
+
+# 行宽 
+ColumnLimit:     120
+
+# 允许短函数写在一行
+AllowShortFunctionsOnASingleLine: Inline
+
+# 指针和引用的对齐方式 (Left: int* p; Right: int *p)
+PointerAlignment: Left
+
+# 包含文件的排序 (先把对应的 .h 排第一，然后是 C 库，C++ 库，最后是项目库)
+IncludeBlocks:   Regroup
+SortIncludes:    true
+
+# 访问修饰符 (public/private) 的偏移
+AccessModifierOffset: -2
