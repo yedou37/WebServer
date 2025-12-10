@@ -5,16 +5,16 @@
 **目标**：不使用 Epoll，仅使用封装好的类实现一个同步阻塞的 Echo Server。
 **重点**：RAII 资源管理，避免手动 close 描述符。
 
-- [ ] **Infrastructure**: 确保 `Macros.hh` 中的 `DISALLOW_COPY_AND_MOVE` 可用。
-- [ ] **InetAddress**:
-  - [ ] 实现 IP/Port 的转换（`sockaddr_in`）。
-  - [ ] 实现 `toIp()`, `toPort()`, `toIpPort()`。
-- [ ] **Socket**:
-  - [ ] 构造函数创建 socket (`AF_INET`, `SOCK_STREAM`, `0`)。
-  - [ ] 析构函数 `close(fd)`。
-  - [ ] 封装 `bind()`, `listen()`, `accept()`。
-  - [ ] 封装 `setReuseAddr()`, `setNonBlock()`。
-- [ ] **验证 (v0.1)**:
+- [x] **Infrastructure**: 确保 `Macros.hh` 中的 `DISALLOW_COPY_AND_MOVE` 可用。
+- [x] **InetAddress**:
+  - [x] 实现 IP/Port 的转换（`sockaddr_in`）。
+  - [x] 实现 `toIp()`, `toPort()`, `toIpPort()`。
+- [x] **Socket**:
+  - [x] 构造函数创建 socket (`AF_INET`, `SOCK_STREAM`, `0`)。
+  - [x] 析构函数 `close(fd)`。
+  - [x] 封装 `bind()`, `listen()`, `accept()`。
+  - [x] 封装 `setReuseAddr()`, `setNonBlock()`。
+- [x] **验证 (v0.1)**:
   - 在 `main.cpp` 中使用 `Socket` 和 `InetAddress` 写一个死循环接受连接并 `read/write`。
   - 测试：`telnet localhost 8080`。
 
