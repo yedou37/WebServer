@@ -9,7 +9,7 @@ class InetAddress {
 public:
   using port_t = uint16_t;
   using sin_t = struct sockaddr_in;
-
+  InetAddress() = default;
   InetAddress(const std::string& ip, port_t port);
   explicit InetAddress(const sin_t& sock_in) : sock_in_(sock_in) {};
 

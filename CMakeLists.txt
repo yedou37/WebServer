@@ -24,13 +24,16 @@ else()
     add_compile_options(-O3)
 endif()
 
-
-
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/src) 
 
+# Main executable
 file(GLOB_RECURSE SOURCES "src/*.cpp")
-
 add_executable(Janus ${SOURCES})
 
+# Socket test executable
+add_executable(SocketTest tests/SocketTest.cpp src/net/Socket.cpp src/net/InetAddress.cpp)
+target_include_directories(SocketTest PRIVATE src/net)
+
 target_link_libraries(Janus pthread)
+target_link_libraries(SocketTest pthread)
