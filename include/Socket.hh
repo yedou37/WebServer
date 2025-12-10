@@ -1,0 +1,7 @@
+#pragma once
+#include <netinet/in.h>
+#include <sys/socket.h>
+
+#include "base/Macros.hh"
+
+class Socket {};
