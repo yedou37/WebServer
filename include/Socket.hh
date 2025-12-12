@@ -4,8 +4,6 @@
 #include "base/Macros.hh"
 
 class Socket {
-  using fd_t = int;
-
 public:
   DISALLOW_COPY(Socket);
 

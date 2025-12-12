@@ -11,3 +11,5 @@
 #define DISALLOW_COPY_AND_MOVE(cname) \
   DISALLOW_COPY(cname);               \
   DISALLOW_MOVE(cname);
+
+using fd_t = int;
