@@ -44,6 +44,19 @@ add_executable(EventLoopTest tests/EventLoopTest.cpp
                                  src/base/CurrentThread.cpp)
 target_include_directories(EventLoopTest PRIVATE src/net src/base)
 
+# Acceptor test executable
+add_executable(AcceptorTest tests/AcceptorTest.cpp
+                             src/net/Acceptor.cpp
+                             src/net/Socket.cpp
+                             src/net/InetAddress.cpp
+                             src/net/EventLoop.cpp
+                             src/net/Channel.cpp
+                             src/net/Epoll.cpp
+                             src/base/Timestamp.cpp
+                             src/base/CurrentThread.cpp)
+target_include_directories(AcceptorTest PRIVATE src/net src/base)
+
 target_link_libraries(Janus pthread)
 target_link_libraries(SocketTest pthread)
 target_link_libraries(EventLoopTest pthread)
+target_link_libraries(AcceptorTest pthread)

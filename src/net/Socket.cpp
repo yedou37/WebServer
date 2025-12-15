@@ -64,26 +64,20 @@ void Socket::listen() const {
     throw std::runtime_error("Socket::listen error");
   }
 }
-
-Socket Socket::accept(InetAddress* peeraddr) const {
+fd_t Socket::accept(InetAddress* peeraddr) const {
   InetAddress::sin_t addr;
   socklen_t len = sizeof(addr);
   memset(&addr, 0, sizeof(addr));
 
-  int connfd = ::accept(fd_, reinterpret_cast<sockaddr*>(&addr), &len);
+  fd_t connfd = ::accept4(fd_, reinterpret_cast<sockaddr*>(&addr), &len, SOCK_NONBLOCK | SOCK_CLOEXEC);
 
   if (connfd >= 0) {
-    // 如果成功，利用 InetAddress 的构造函数，把 sock_in 转换成对象
-    // 这里利用了赋值操作符，将 peeraddr 指向的内容更新
     if (peeraddr != nullptr) {
       *peeraddr = InetAddress(addr);
     }
-  } else {
-    // TODO(yedou): 在非阻塞模式下，需要处理 EAGAIN 和 EWOULDBLOCK，不能视为错误
-    perror("Socket::accept error");
   }
 
-  return Socket{connfd};
+  return connfd;
 }
 
 void Socket::setReuseAddr(bool on) const {

@@ -20,7 +20,7 @@ public:
   void bindAddress(const InetAddress& localaddr) const;
   void listen() const;
 
-  Socket accept(InetAddress* peeraddr) const;
+  fd_t accept(InetAddress* peeraddr) const;
 
   void setReuseAddr(bool on) const;
 

@@ -33,9 +33,9 @@ void test_server() {
 
     // 6. Accept connection (blocking operation until client connects)
     InetAddress clientAddr;
-    Socket connSocket = listenSocket.accept(&clientAddr);
-
-    if (connSocket.fd() >= 0) {
+    fd_t connfd = listenSocket.accept(&clientAddr);
+    Socket connSocket(connfd);
+    if (connfd >= 0) {
       std::cout << "[DEBUG] Connection accepted!\n";
       std::cout << "[DEBUG] Client Address: " << clientAddr.ToIpPort() << '\n';
 
