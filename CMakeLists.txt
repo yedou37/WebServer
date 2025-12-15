@@ -35,5 +35,15 @@ add_executable(Janus ${SOURCES})
 add_executable(SocketTest tests/SocketTest.cpp src/net/Socket.cpp src/net/InetAddress.cpp)
 target_include_directories(SocketTest PRIVATE src/net)
 
+# EventLoop test executable
+add_executable(EventLoopTest tests/EventLoopTest.cpp 
+                                 src/net/EventLoop.cpp 
+                                 src/net/Channel.cpp 
+                                 src/net/Epoll.cpp
+                                 src/base/Timestamp.cpp
+                                 src/base/CurrentThread.cpp)
+target_include_directories(EventLoopTest PRIVATE src/net src/base)
+
 target_link_libraries(Janus pthread)
 target_link_libraries(SocketTest pthread)
+target_link_libraries(EventLoopTest pthread)

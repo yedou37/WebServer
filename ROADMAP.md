@@ -22,14 +22,14 @@
 
 **目标**：实现“事件驱动”模型。单线程下能同时处理多个连接的事件。
 
-- [ ] **Channel (核心)**:
-  - [ ] 封装 `fd` 和感兴趣的事件 (`EPOLLIN`, `EPOLLOUT`)。
-  - [ ] 设置回调函数 (`std::function`): `readCallback`, `writeCallback`。
-  - [ ] 实现 `handleEvent()`: 根据 `revents` 调用不同的回调。
-- [ ] **Epoll (Poller)**:
-  - [ ] 封装 `epoll_create1`。
-  - [ ] 封装 `updateChannel` (`epoll_ctl`): 负责 add/mod/del。
-  - [ ] 封装 `poll` (`epoll_wait`): 返回活跃的 Channels 列表。
+- [x] **Channel (核心)**:
+  - [x] 封装 `fd` 和感兴趣的事件 (`EPOLLIN`, `EPOLLOUT`)。
+  - [x] 设置回调函数 (`std::function`): `readCallback`, `writeCallback`。
+  - [x] 实现 `handleEvent()`: 根据 `revents` 调用不同的回调。
+- [x] **Epoll (Poller)**:
+  - [x] 封装 `epoll_create1`。
+  - [x] 封装 `updateChannel` (`epoll_ctl`): 负责 add/mod/del。
+  - [x] 封装 `poll` (`epoll_wait`): 返回活跃的 Channels 列表。
 - [ ] **EventLoop (驱动)**:
   - [ ] 持有 `Epoll` 对象。
   - [ ] 主循环 `loop()`: 调用 `epoll->poll()` 获取活跃 Channel，然后调用 `channel->handleEvent()`。

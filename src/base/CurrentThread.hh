@@ -1,0 +1,12 @@
+#pragma once
+namespace CurrentThread {
+extern thread_local int t_cachedTid;
+void cacheTid();
+inline int tid() {
+  if (__builtin_expect(t_cachedTid == 0, 0)) {  // NOLINT
+    cacheTid();
+  }
+  return t_cachedTid;
+}
+
+}  // namespace CurrentThread

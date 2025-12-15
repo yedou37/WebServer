@@ -22,7 +22,10 @@ void Channel::Update() {
   // 调用 EventLoop => Poller => epoll_ctl
   loop_->UpdateChannel(this);
 }
-
+void Channel::Remove() {
+  assert(IsNoneEvent());
+  loop_->RemoveChannel(this);
+}
 // EventLoop 调用此函数
 void Channel::HandleEvent(Timestamp receiveTime) {
   std::shared_ptr<void> guard;
@@ -42,7 +45,7 @@ void Channel::HandleEventWithGuard(Timestamp receiveTime) {
   // 1. 处理连接断开 (EPOLLHUP)
   // 当对端关闭连接时，EPOLLHUP 会触发。
   // 如果没有 EPOLLIN，直接触发关闭；如果有 EPOLLIN，通常会在 ReadCallback 里读到 0 字节后触发关闭。
-  if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
+  if (((revents_ & EPOLLHUP) != 0U) && ((revents_ & EPOLLIN) == 0U)) {
     if (closeCallback_) {
       closeCallback_();
     }

@@ -44,7 +44,7 @@ public:
     events_ = kNoneEvent;
     Update();
   }
-
+  void Remove();
   // --- 状态判断 ---
   [[nodiscard]] bool IsNoneEvent() const { return events_ == kNoneEvent; }
   [[nodiscard]] bool IsWriting() const { return (events_ & kWriteEvent) != 0U; }
