@@ -1,98 +1,17 @@
 #include "Epoll.hh"
 
+#include <unistd.h>  // for close
+
 #include <cassert>
 #include <cstring>
-#include <stdexcept>
+#include <iostream>  // for perror / logging
 
-#include "base/Timestamp.hh"
+#include "base/Macros.hh"
 
-static constexpr int kNew = -1;
-static constexpr int kAdded = 1;
-static constexpr int kDeleted = 2;
-
-Timestamp Epoll::poll(const int& timeoutMs, ChannelList* activeChannels) {
-  int numEvents = ::epoll_wait(epollfd_, events_.data(), static_cast<int>(events_.size()), timeoutMs);
-
-  int savedErrno = errno;  // 立刻保存 errno，防止被 Timestamp::Now 覆盖
-  Timestamp now = Timestamp::Now();
-
-  if (numEvents > 0) {
-    // LOG_INFO << numEvents << " events happened";
-    FillActiveChannels(numEvents, activeChannels);
-
-    // 如果 activeChannels 满了，说明并发很高，需要扩容
-    // 因为epoll_wait函数是向一个c风格的数组中写入数据，所以需要手动扩容
-    if (numEvents == static_cast<int>(events_.size())) {
-      events_.resize(events_.size() * 2);
-    }
-  } else if (numEvents == 0) {
-    // LOG_TRACE << "nothing happened"; // 超时
-  } else {
-    // 错误处理
-    if (savedErrno != EINTR) {
-      // errno = EINTR 意味着被信号打断，不是真正的错误，可以忽略
-      // LOG_ERROR << "Epoll::poll() error";
-      perror("Epoll::poll() error");
-    }
-  }
-  return now;
-}
-
-void Epoll::FillActiveChannels(const int& numEvents, ChannelList* activeChannels) const {
-  for (int i = 0; i < numEvents; ++i) {
-    // void* -> Channel*
-    auto* channel = static_cast<Channel*>(events_[i].data.ptr);
-    channel->SetRevents(events_[i].events);
-    activeChannels->emplace_back(channel);
-  }
-}
-void Epoll::UpdateChannel(Channel* channel) {
-  const int index = channel->GetIndex();
-  epoll_operation_t operation;
-  fd_t fd = channel->Getfd();
-  if (index == kNew || index == kDeleted) {
-    operation = EPOLL_CTL_ADD;
-    if (index == kNew) {
-      channels_.insert_or_assign(fd, channel);
-    } else {
-      assert(channels_.find(fd) != channels_.end());
-      assert(channels_[fd] == channel);
-    }
-    channel->SetIndex(kAdded);
-    Update(operation, channel);
-  } else {
-    assert(channels_.find(fd) != channels_.end());
-    assert(channels_[fd] == channel);
-    assert(index == kAdded);
-    if (channel->IsNoneEvent()) {
-      operation = EPOLL_CTL_DEL;
-      Update(operation, channel);
-      channel->SetIndex(kDeleted);
-    } else {
-      operation = EPOLL_CTL_MOD;
-      Update(operation, channel);
-    }
-  }
-}
-
-void Epoll::RemoveChannel(Channel* channel) {
-  fd_t fd = channel->Getfd();
-  assert(channels_.find(fd) != channels_.end());
-  assert(channels_[fd] == channel);
-  assert(channel->IsNoneEvent());
-
-  auto n = channels_.erase(fd);
-  assert(n == 1);
-  if (channel->GetIndex() == kAdded) {
-    Update(EPOLL_CTL_DEL, channel);
-  }
-  channel->SetIndex(kNew);
-}
-
-Epoll::Epoll() : epollfd_(epoll_create1(EPOLL_CLOEXEC)), events_(kInitEventListSize) {
+Epoll::Epoll() : epollfd_(::epoll_create1(EPOLL_CLOEXEC)), events_(kInitEventListSize) {
   if (epollfd_ < 0) {
     perror("epoll_create1() failed");
-    throw std::runtime_error("epoll_create1() failed: " + std::string(strerror(errno)));
+    exit(1);
   }
 }
 
@@ -100,16 +19,99 @@ Epoll::~Epoll() {
   ::close(epollfd_);
 }
 
-void Epoll::Update(epoll_operation_t operation, Channel* channel) const {
-  epoll_event event;
-  memset(&event, 0, sizeof(event));
-  event.events = channel->GetEvents();
-  event.data.ptr = channel;
-  if (::epoll_ctl(epollfd_, operation, channel->Getfd(), &event) < 0) {
-    if (operation == EPOLL_CTL_DEL) {
-      perror("epoll_ctl() failed when EPOLL_CTL_DEL");
-    } else {
-      perror("epoll_ctl() failed");
+Timestamp Epoll::poll(int timeoutMs, ChannelList* activeChannels) {
+  int numEvents = ::epoll_wait(epollfd_, events_.data(), static_cast<int>(events_.size()), timeoutMs);
+
+  int savedErrno = errno;
+  Timestamp now = Timestamp::Now();
+
+  if (numEvents > 0) {
+    FillActiveChannels(numEvents, activeChannels);
+
+    if (numEvents == static_cast<int>(events_.size())) {
+      events_.resize(events_.size() * 2);
+    }
+  } else if (numEvents == 0) {
+    // Timeout
+  } else {
+    if (savedErrno != EINTR) {
+      errno = savedErrno;
+      perror("Epoll::poll() error");
     }
   }
+  return now;
+}
+
+void Epoll::FillActiveChannels(int numEvents, ChannelList* activeChannels) const {
+  for (int i = 0; i < numEvents; ++i) {
+    auto* channel = static_cast<Channel*>(events_[i].data.ptr);
+    channel->SetRevents(events_[i].events);
+    activeChannels->push_back(channel);
+  }
+}
+
+void Epoll::UpdateChannel(Channel* channel) {
+  const Channel::State state = channel->GetState();
+  const fd_t fd = channel->Getfd();
+
+  if (state == Channel::State::kNew || state == Channel::State::kDeleted) {
+    if (state == Channel::State::kNew) {
+      assert(channels_.find(fd) == channels_.end());
+      channels_[fd] = channel;
+    } else {
+      assert(channels_.find(fd) != channels_.end());
+      assert(channels_[fd] == channel);
+    }
+
+    channel->SetState(Channel::State::kAdded);
+    Update(EPOLL_CTL_ADD, channel);
+  } else {
+    // state == Channel::State::kAdded
+    assert(channels_.find(fd) != channels_.end());
+    assert(channels_[fd] == channel);
+
+    if (channel->IsNoneEvent()) {
+      Update(EPOLL_CTL_DEL, channel);
+      channel->SetState(Channel::State::kDeleted);
+    } else {
+      Update(EPOLL_CTL_MOD, channel);
+    }
+  }
+}
+
+void Epoll::RemoveChannel(Channel* channel) {
+  int fd = channel->Getfd();
+  assert(channels_.find(fd) != channels_.end());
+  assert(channels_[fd] == channel);
+  assert(channel->IsNoneEvent());
+
+  size_t n = channels_.erase(fd);
+  (void)n;  // 防止 Release 模式下未使用变量的警告
+  assert(n == 1);
+
+  if (channel->GetState() == Channel::State::kAdded) {
+    Update(EPOLL_CTL_DEL, channel);
+  }
+  channel->SetState(Channel::State::kNew);
+}
+
+void Epoll::Update(int operation, Channel* channel) const {
+  epoll_event event = {};
+  event.events = channel->GetEvents();
+  event.data.ptr = channel;
+
+  if (::epoll_ctl(epollfd_, operation, channel->Getfd(), &event) < 0) {
+    if (operation == EPOLL_CTL_DEL) {
+      // 在 removeChannel 中我们经常会遇到 DEL 失败的情况（比如对端早已关闭），
+      // LOG_ERROR << "epoll_ctl op=" << operation << " fd=" << channel->Getfd();
+    } else {
+      // LOG_FATAL << "epoll_ctl op=" << operation << " fd=" << channel->Getfd();
+      perror("epoll_ctl error");
+    }
+  }
+}
+
+bool Epoll::HasChannel(Channel* channel) const {
+  auto it = channels_.find(channel->Getfd());
+  return it != channels_.end() && it->second == channel;
 }
