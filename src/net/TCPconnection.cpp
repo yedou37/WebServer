@@ -118,7 +118,7 @@ void TCPConnection::HandleError() {
   if (::getsockopt(channel_->Getfd(), SOL_SOCKET, SO_ERROR, &err, &optlen) < 0) {
     err = errno;
   }
-  perror("TCPConnection::HandleError");
+  // perror("TCPConnection::HandleError");
 }
 
 void TCPConnection::Send(const std::string& message) {
