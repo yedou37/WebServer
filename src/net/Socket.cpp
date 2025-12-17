@@ -100,3 +100,7 @@ void Socket::setTcpNoDelay(bool on) const {
   // 禁用 Nagle 算法
   ::setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
 }
+
+void Socket::shutdownWrite() const {
+  ::shutdown(fd_, SHUT_WR);
+}

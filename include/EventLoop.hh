@@ -33,10 +33,11 @@ public:
 
   [[nodiscard]] bool IsInEventLoopThread() const { return tid_ == CurrentThread::tid(); }
 
+  void QueueInLoop(Functor cb);
+
 private:
   void Wakeup() const;
   void HandleRead() const;
-  void QueueInLoop(Functor cb);
   void DoPendingFunctors();
   static constexpr int kPollTimeMs = 10000;
   using ChannelList = std::vector<Channel *>;

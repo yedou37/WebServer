@@ -81,14 +81,12 @@ void Epoll::UpdateChannel(Channel* channel) {
 
 void Epoll::RemoveChannel(Channel* channel) {
   int fd = channel->Getfd();
-  assert(channels_.find(fd) != channels_.end());
-  assert(channels_[fd] == channel);
   assert(channel->IsNoneEvent());
-
-  size_t n = channels_.erase(fd);
-  (void)n;  // 防止 Release 模式下未使用变量的警告
-  assert(n == 1);
-
+  if (channels_.find(fd) != channels_.end()) {
+    size_t n = channels_.erase(fd);
+    (void)n;  // 防止 Release 模式下未使用变量的警告
+    assert(n == 1);
+  }
   if (channel->GetState() == Channel::State::kAdded) {
     Update(EPOLL_CTL_DEL, channel);
   }

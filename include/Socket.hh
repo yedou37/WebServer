@@ -29,6 +29,7 @@ public:
   void setKeepAlive(bool on) const;
 
   void setTcpNoDelay(bool on) const;
+  void shutdownWrite() const;
 
 private:
   void swap(Socket& other) noexcept;
