@@ -64,6 +64,8 @@ add_executable(TCPServerTest tests/TCPServerTest.cpp
                               src/net/Socket.cpp
                               src/net/InetAddress.cpp
                               src/net/EventLoop.cpp
+                              src/net/EventLoopThread.cpp
+                              src/net/EventLoopThreadPool.cpp
                               src/net/Channel.cpp
                               src/net/Epoll.cpp
                               src/base/Timestamp.cpp
@@ -79,6 +81,8 @@ add_executable(HttpServerTest tests/HttpServerTest.cpp
                               src/net/Socket.cpp
                               src/net/InetAddress.cpp
                               src/net/EventLoop.cpp
+                              src/net/EventLoopThread.cpp
+                              src/net/EventLoopThreadPool.cpp
                               src/net/Channel.cpp
                               src/net/Epoll.cpp
                               src/base/Timestamp.cpp

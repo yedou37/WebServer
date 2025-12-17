@@ -6,6 +6,7 @@
 #include <functional>
 #include <utility>
 
+#include "EventLoopThread.hh"
 #include "EventLoopThreadPool.hh"
 #include "Socket.hh"
 

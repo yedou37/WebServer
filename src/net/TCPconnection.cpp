@@ -29,11 +29,7 @@ TCPConnection::TCPConnection(EventLoop* loop, std::string nameArg, fd_t sockfd,
   socket_->setKeepAlive(true);
 }
 
-TCPConnection::~TCPConnection() {
-  channel_->DisableAll();
-  channel_->Remove();
-}
-
+TCPConnection::~TCPConnection() = default;
 void TCPConnection::ConnectEstablished() {
   assert(loop_->IsInEventLoopThread() == true);
   assert(state_ == State::kConnecting);
@@ -100,6 +96,9 @@ void TCPConnection::HandleWrite() {
 
 void TCPConnection::HandleClose() {
   assert(loop_->IsInEventLoopThread() == true);
+  if (state_ == State::kDisconnected) {
+    return;
+  }
   assert(state_ == State::kConnected || state_ == State::kDisconnecting);
   setState(State::kDisconnected);
   channel_->DisableAll();
