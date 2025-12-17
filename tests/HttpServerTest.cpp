@@ -8,11 +8,13 @@
 
 // 用户定义的：连接建立/断开回调
 void onConnection(const TCPConnectionPtr& conn) {
+  /*
   if (conn->connected()) {
     std::cout << "HTTP Connection UP: " << conn->peerAddress().ToIpPort() << '\n';
   } else {
     std::cout << "HTTP Connection DOWN: " << conn->peerAddress().ToIpPort() << '\n';
   }
+    */
 }
 
 // 伪装成 HTTP Server 的回调
@@ -33,7 +35,8 @@ void onMessage(const TCPConnectionPtr& conn, Buffer* buf, Timestamp time) {
 
   // 4. 关键：发送完立刻断开连接（短连接模式）
   // 这样 Webbench 才知道"这个请求处理完了"，才会去发下一个
-  conn->Shutdown();
+  // 如果测测试长连接，就不要调用 Shutdown()
+  // conn->Shutdown();
 }
 
 int main() {
