@@ -6,6 +6,7 @@
 #include <functional>
 #include <utility>
 
+#include "EventLoopThreadPool.hh"
 #include "Socket.hh"
 
 TCPServer::TCPServer(EventLoop *loop, const InetAddress &listenAddr, std::string nameArg)
@@ -14,7 +15,8 @@ TCPServer::TCPServer(EventLoop *loop, const InetAddress &listenAddr, std::string
       name_(std::move(nameArg)),
       acceptor_(std::make_unique<Acceptor>(loop, listenAddr)),
       started_(0),
-      nextConnId_(1) {
+      nextConnId_(1),
+      threadPool_(std::make_shared<EventLoopThreadPool>(loop, name_)) {
   acceptor_->SetNewConnectionCallback(
       [this](fd_t socket_fd, const InetAddress &peerAddr) { newConnection(socket_fd, peerAddr); });
 }
@@ -33,7 +35,7 @@ void TCPServer::start() {
   assert(loop_->IsInEventLoopThread() == true);
   if (started_.fetch_add(1) == 0) {
     // 启动线程池
-    // loop_->RunInLoop([this](){ threadPool_->start(); });
+    threadPool_->start();
 
     // 启动 Acceptor 监听
     loop_->RunInLoop([capture0 = acceptor_.get()] { capture0->Listen(); });
@@ -43,7 +45,8 @@ void TCPServer::start() {
 void TCPServer::newConnection(int sockfd, const InetAddress &peerAddr) {
   assert(loop_->IsInEventLoopThread());
 
-  EventLoop *ioLoop = loop_;
+  // 使用线程池获取下一个EventLoop
+  EventLoop *ioLoop = threadPool_->getNextLoop();
   std::array<char, 64> buf{};  // NOLINT
   snprintf(buf.data(), buf.size(), "-%s#%d", ipPort_.c_str(), nextConnId_);
   ++nextConnId_;
@@ -92,5 +95,5 @@ void TCPServer::removeConnectionInLoop(const TCPConnectionPtr &conn) {
 }
 
 void TCPServer::setThreadNum(int numThreads) {
-  // TODO(yedou): 集成 EventLoopThreadPool
+  threadPool_->setThreadNum(numThreads);
 }

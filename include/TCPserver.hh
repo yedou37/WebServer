@@ -8,6 +8,7 @@
 
 #include "Acceptor.hh"
 #include "EventLoop.hh"
+#include "EventLoopThreadPool.hh"
 #include "InetAddress.hh"
 #include "TCPconnection.hh"
 #include "base/Callbacks.hh"
@@ -53,4 +54,5 @@ private:
 
   std::atomic_int started_;
   int nextConnId_;
+  std::shared_ptr<EventLoopThreadPool> threadPool_;
 };
