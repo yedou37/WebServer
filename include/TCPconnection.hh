@@ -52,7 +52,6 @@ private:
   std::unique_ptr<Channel> channel_;
   const InetAddress local_addr_;
   const InetAddress peer_addr_;
-  bool reading_;
 
   ConnectionCallback connection_callback_;
   MessageCallback message_callback_;
