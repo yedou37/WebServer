@@ -16,7 +16,7 @@ public:
 
 private:
   void HandleRead();
-  EventLoop *loop_;
+  [[maybe_unused]] EventLoop *loop_;
   Socket acceptSocket_;
 
   Channel acceptChannel_;

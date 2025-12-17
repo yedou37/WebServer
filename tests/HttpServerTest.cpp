@@ -37,7 +37,7 @@ void onMessage(const TCPConnectionPtr& conn, Buffer* buf, Timestamp time) {
   // 4. 关键：发送完立刻断开连接（短连接模式）
   // 这样 Webbench 才知道"这个请求处理完了"，才会去发下一个
   // 如果测测试长连接，就不要调用 Shutdown()
-  conn->Shutdown();
+  // conn->Shutdown();
 }
 
 int main() {
@@ -45,7 +45,7 @@ int main() {
   EventLoop loop;
   InetAddress addr("0.0.0.0", 8080);  // NOLINT 监听 8080 端口，这是 HTTP 服务常用端口
   TCPServer server(&loop, addr, "MyHttpServer");
-  server.setThreadNum(4);  // NOLINT
+  server.setThreadNum(8);  // NOLINT
   // 注册用户回调
   server.setConnectionCallback(onConnection);
   server.setMessageCallback(onMessage);
