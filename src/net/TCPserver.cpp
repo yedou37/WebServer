@@ -14,7 +14,7 @@ TCPServer::TCPServer(EventLoop *loop, const InetAddress &listenAddr, std::string
     : loop_(loop),
       ipPort_(listenAddr.ToIpPort()),
       name_(std::move(nameArg)),
-      acceptor_(std::make_unique<Acceptor>(loop, listenAddr)),
+      acceptor_(std::make_unique<Acceptor>(loop, listenAddr, true)),
       started_(0),
       nextConnId_(1),
       threadPool_(std::make_shared<EventLoopThreadPool>(loop, name_)) {

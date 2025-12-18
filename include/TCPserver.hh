@@ -29,6 +29,7 @@ public:
 
   // 设置线程池数量
   void setThreadNum(int numThreads);
+  [[nodiscard]] EventLoop *getLoop() const { return loop_; }
 
 private:
   // 当 Acceptor 接收到新连接时调用此函数

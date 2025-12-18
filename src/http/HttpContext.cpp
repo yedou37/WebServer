@@ -1,10 +1,38 @@
 #include "http/HttpContext.hh"
 
 #include <string_view>
-
-// 定义明确的解析状态，避免 bool 混淆
-
-// 修改 helper 函数签名
+bool HttpContext::parseRequestLine(const char* begin, const char* end) {
+  bool succeed{false};
+  const char* start = begin;
+  const char* space = std::find(start, end, ' ');
+  if (space != end && request_.SetMethod(start, space)) {
+    // successfully set method
+    start = space + 1;
+    space = std::find(start, end, ' ');
+    if (space != end) {
+      const char* question = std::find(start, space, '?');
+      if (question != space) {
+        request_.SetPath(start, question);
+        request_.SetQuery(question + 1, space);
+      } else {
+        request_.SetPath(start, space);
+      }
+      start = space + 1;
+      succeed = (end - start == 8) && std::equal(start, end - 1, "HTTP/1.");  // NOLINT
+      if (succeed) {
+        if (*(end - 1) == '1') {
+          request_.SetVersion(HttpRequest::Version::HTTP_1_1);
+        } else if (*(end - 1) == '0') {
+          request_.SetVersion(HttpRequest::Version::HTTP_1_0);
+        } else {
+          request_.SetVersion(HttpRequest::Version::UNKNOWN);
+          succeed = false;
+        }
+      }
+    }
+  }
+  return succeed;
+}
 HttpContext::LineStatus HttpContext::processRequestLine(Buffer* buf) {
   const char* end = buf->peek() + buf->readableBytes();
   const char* crlf = std::search(buf->peek(), end, kCRLF, kCRLF + 2);

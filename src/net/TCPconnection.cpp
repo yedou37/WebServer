@@ -131,7 +131,17 @@ void TCPConnection::Send(const std::string& message) {
     }
   }
 }
-
+void TCPConnection::Send(Buffer* buf) {
+  if (state_ == State::kConnected) {
+    if (loop_->IsInEventLoopThread()) {
+      sendInLoop(buf->peek(), buf->readableBytes());
+    } else {
+      std::string msg(buf->peek(), buf->readableBytes());
+      buf->retrieveAll();
+      loop_->RunInLoop([ptr = shared_from_this(), msg = std::move(msg)]() { ptr->sendInLoop(msg.data(), msg.size()); });
+    }
+  }
+}
 void TCPConnection::sendInLoop(const void* data, size_t len) {
   assert(loop_->IsInEventLoopThread());
   ssize_t nwrote = 0;

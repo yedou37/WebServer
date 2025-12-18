@@ -1,5 +1,8 @@
 #pragma once
 
+#include <sys/types.h>
+
+#include <any>
 #include <memory>
 #include <utility>
 
@@ -22,6 +25,7 @@ public:
   void ConnectEstablished();
   void ConnectDestroyed();
   void Send(const std::string &message);
+  void Send(Buffer *buf);
   void Shutdown();
 
   EventLoop *getLoop() const { return loop_; }
@@ -34,6 +38,9 @@ public:
   void setMessageCallback(const MessageCallback &cb) { message_callback_ = cb; }
   void setWriteCompleteCallback(const WriteCompleteCallback &cb) { write_complete_callback_ = cb; }
   void setCloseCallback(const CloseCallback &cb) { close_callback_ = cb; }
+  void setContext(const std::any &context) { context_ = context; }
+  std::any *getMutableContext() { return &context_; }
+  size_t getOutputBuffferReadableSize() const { return output_buffer_.readableBytes(); };
 
 private:
   enum class State : std::uint8_t { kConnecting, kConnected, kDisconnecting, kDisconnected };
@@ -60,4 +67,5 @@ private:
 
   Buffer input_buffer_;
   Buffer output_buffer_;
+  std::any context_;
 };

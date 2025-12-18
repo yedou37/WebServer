@@ -26,7 +26,10 @@ public:
 
   [[nodiscard]] bool IsGotAll() const { return state_ == HttpRequestParseState::GOT_ALL; };
 
-  void reset();
+  void reset() {
+    state_ = HttpRequestParseState::EXPECT_REQUEST_LINE;
+    request_.reset();
+  };
 
   [[nodiscard]] const HttpRequest& request() const { return request_; };
   [[nodiscard]] HttpRequest& request() { return request_; };

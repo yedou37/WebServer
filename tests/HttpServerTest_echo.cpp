@@ -37,7 +37,7 @@ void onMessage(const TCPConnectionPtr& conn, Buffer* buf, Timestamp time) {
   // 4. 关键：发送完立刻断开连接（短连接模式）
   // 这样 Webbench 才知道"这个请求处理完了"，才会去发下一个
   // 如果测测试长连接，就不要调用 Shutdown()
-  // conn->Shutdown();
+  conn->Shutdown();
 }
 
 int main() {

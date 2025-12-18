@@ -74,7 +74,7 @@ add_executable(TCPServerTest tests/TCPServerTest.cpp
 target_include_directories(TCPServerTest PRIVATE src/net src/base)
 
 # HTTP Server test executable
-add_executable(HttpServerTest tests/HttpServerTest.cpp
+add_executable(HttpServerTest tests/HttpServerTest_echo.cpp
                               src/net/TCPserver.cpp
                               src/net/TCPconnection.cpp
                               src/net/Acceptor.cpp
@@ -90,9 +90,31 @@ add_executable(HttpServerTest tests/HttpServerTest.cpp
                               src/base/Buffer.cpp)
 target_include_directories(HttpServerTest PRIVATE src/net src/base)
 
+# HTTP Server parser test executable
+add_executable(HttpServerTest_parser tests/HttpServerTest_parser.cpp
+                                     src/net/TCPserver.cpp
+                                     src/net/TCPconnection.cpp
+                                     src/net/Acceptor.cpp
+                                     src/net/Socket.cpp
+                                     src/net/InetAddress.cpp
+                                     src/net/EventLoop.cpp
+                                     src/net/EventLoopThread.cpp
+                                     src/net/EventLoopThreadPool.cpp
+                                     src/net/Channel.cpp
+                                     src/net/Epoll.cpp
+                                     src/base/Timestamp.cpp
+                                     src/base/CurrentThread.cpp
+                                     src/base/Buffer.cpp
+                                     src/http/HttpContext.cpp
+                                     src/http/HttpRequest.cpp
+                                     src/http/HttpResponse.cpp
+                                     src/http/HttpServer.cpp)
+target_include_directories(HttpServerTest_parser PRIVATE src/net src/base src/http)
+
 target_link_libraries(Janus pthread)
 target_link_libraries(SocketTest pthread)
 target_link_libraries(EventLoopTest pthread)
 target_link_libraries(AcceptorTest pthread)
 target_link_libraries(TCPServerTest pthread)
 target_link_libraries(HttpServerTest pthread)
+target_link_libraries(HttpServerTest_parser pthread)

@@ -27,6 +27,7 @@ public:
   void AddHeader(const std::string& key, const std::string& value) { headers_[key] = value; }
 
   void AppendToBuffer(Buffer* outputBuffer) const;
+  [[nodiscard]] bool CloseConnection() const { return closeConnection_; }
 
 private:
   std::unordered_map<std::string, std::string> headers_;
