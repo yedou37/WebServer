@@ -40,5 +40,28 @@
 # debug information files
 *.dwo
 
+# Build and cache directories
 build/
 .cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Python bytecode and cache
+*.pyc
+__pycache__/
+
+# Distribution packages
+dist/
+build/
+*.egg-info/
+
+# Test cache
+.pytest_cache/
+.coverage
+
+# Log files
+*.log

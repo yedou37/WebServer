@@ -37,25 +37,27 @@ void HttpServer::onConnection(const TCPConnectionPtr& conn) {  // NOLINT
 void HttpServer::onMessage(const TCPConnectionPtr& conn, Buffer* buf, Timestamp receiveTime) {
   // 1. 取出该连接绑定的 Context
   auto* context = std::any_cast<HttpContext>(conn->getMutableContext());
+  while (buf->readableBytes() > 0) {
+    // 2. 解析请求
+    if (!context->ParseRequest(buf, receiveTime)) {
+      // 解析出错（比如请求格式错误），发送 400 响应并关闭连接
+      conn->Send("HTTP/1.1 400 Bad Request\r\n\r\n");
+      conn->Shutdown();
+      break;
+    }
 
-  // 2. 解析请求
-  if (!context->ParseRequest(buf, receiveTime)) {
-    // 解析出错（比如请求格式错误），发送 400 响应并关闭连接
-    conn->Send("HTTP/1.1 400 Bad Request\r\n\r\n");
-    conn->Shutdown();
-    return;
-  }
-
-  // 3. 如果已解析完一个完整的 HTTP 请求
-  if (context->IsGotAll()) {
-    // 3.1 调用 onRequest，它会填充一个 HttpResponse 对象
-    onRequest(conn, context->request());
-
-    // 3.2 重置 Context，为处理下一个请求做准备 (Keep-Alive)
-    context->reset();
+    // 3. 如果已解析完一个完整的 HTTP 请求
+    if (context->IsGotAll()) {
+      // 3.1 调用 onRequest，它会填充一个 HttpResponse 对象
+      onRequest(conn, context->request());
+      // 3.2 重置 Context，为处理下一个请求做准备 (Keep-Alive)
+      context->reset();
+    } else {
+      // 现在的 Buffer 数据不够解析完整的请求（半包），跳出循环等待下一次数据到来
+      break;
+    }
   }
 }
-
 void HttpServer::onRequest(const TCPConnectionPtr& conn, const HttpRequest& req) {
   // 1. 判断是长连接还是短连接
   const std::string& connection = req.GetHeader("Connection");

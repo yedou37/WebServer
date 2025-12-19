@@ -1,3 +1,5 @@
+#include <signal.h>
+
 #include <iostream>
 #include <string>
 
@@ -29,7 +31,7 @@ void onRequest(const HttpRequest& req, HttpResponse* resp) {
 int main(int argc, char* argv[]) {
   EventLoop loop;
   InetAddress addr("0.0.0.0", 8080);  // NOLINT
-
+  ::signal(SIGPIPE, SIG_IGN);
   // 创建 Server
   HttpServer server(&loop, addr, "MyHttpServer");
 

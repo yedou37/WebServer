@@ -80,6 +80,7 @@ See detailed roadmap in [ROADMAP.md](ROADMAP.md)
 - C++20 or higher
 - Linux system (epoll support)
 - CMake 3.10+
+- Python 3.6+ (for test scripts)
 
 ### Build Instructions
 
@@ -103,6 +104,42 @@ make
 ```
 
 By default, the server listens on port 8080.
+
+## Virtual Environment Setup and Testing
+
+### Set up Python Virtual Environment
+
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install test dependencies
+pip install -r requirements.txt
+
+# Deactivate virtual environment
+deactivate
+```
+
+### Run Tests
+
+Ensure the server is running, then execute tests:
+
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Run integration tests
+python -m pytest tests/integration_test/ -v
+
+# Run specific test
+python tests/test_concurrency.py
+
+# Deactivate virtual environment
+deactivate
+```
 
 ## Project Structure
 
