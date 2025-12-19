@@ -20,6 +20,7 @@ TCPConnection::TCPConnection(EventLoop* loop, std::string nameArg, fd_t sockfd,
       channel_(std::make_unique<Channel>(loop, sockfd)),
       local_addr_(local_addr),
       peer_addr_(peer_addr) {
+  socket_->setTcpNoDelay(true);
   // 给 Channel 设置回调函数
   // 当 Channel 收到 Poller 的通知时，会回调 TcpConnection 的方法
   channel_->SetReadCallback([this](Timestamp) { HandleRead(); });
@@ -77,20 +78,28 @@ void TCPConnection::HandleWrite() {
     ssize_t n = ::write(channel_->Getfd(), output_buffer_.peek(), output_buffer_.readableBytes());
     if (n > 0) {
       output_buffer_.retrieve(n);
+      // 如果 output_buffer_ 中的数据全部发送完毕
       if (output_buffer_.readableBytes() == 0) {
+        // 停止关注写事件，避免 busy-loop
         channel_->DisableWrite();
+
+        // 如果有注册“写完成”回调，则调用
         if (write_complete_callback_ != nullptr) {
           loop_->QueueInLoop([this]() { write_complete_callback_(shared_from_this()); });
         }
+        // 如果连接正处于“正在断开”状态，说明之前有一次 Shutdown() 调用
+        // 因为缓冲区未发完而被延迟了。现在数据发完了，正是执行关闭的时刻。
         if (state_ == State::kDisconnecting) {
           shutdownInLoop();
         }
       }
     } else {
+      // LOG_SYSERR << "TCPConnection::HandleWrite";
       perror("TCPConnection::HandleWrite");
     }
   } else {
-    perror("TCPConnection::HandleWrite");
+    // LOG_TRACE << "Connection fd = " << channel_->Getfd() << " is down, no more writing";
+    perror("TCPConnection::HandleWrite writing on non-writing channel");
   }
 }
 

@@ -75,30 +75,6 @@ void HttpServer::onRequest(const TCPConnectionPtr& conn, const HttpRequest& req)
   // 5. 发送缓冲区中的数据
   conn->Send(&response_buf);
   if (response.CloseConnection()) {
-    // 这里需要处理两种情况
-
-    // 情况 A：数据一次性全部发送出去了
-    // conn->Send() 发现 output buffer 为空，会尝试直接 ::send()。
-    // 如果内核缓冲区足够大，所有数据都被拷贝进去了。
-    // 此时，应用程序的任务已经完成。
-    if (conn->getOutputBuffferReadableSize() == 0) {
-      // 我们可以立即、安全地发起关闭流程。
-      conn->Shutdown();
-    }
-    // 情况 B：数据没能一次性发完，被暂存到了 output buffer
-    // 这意味着 TCPConnection 的 Channel 已经注册了 EPOLLOUT 事件，
-    // 等待内核缓冲区变得可写。
-    else {
-      // 我们不能现在就关闭，因为数据还在应用程序的缓冲区里！
-      // 正确的做法是：给连接设置一个“写完就关闭”的回调。
-      // 这个回调会在 output buffer 被清空时（在 HandleWrite 中）被触发。
-      std::weak_ptr<TCPConnection> weak_conn = conn;
-      conn->setWriteCompleteCallback([weak_conn](const TCPConnectionPtr&) {
-        if (auto conn_ptr = weak_conn.lock()) {
-          // 在这里，我们确信所有数据都已交给内核，现在可以安全关闭了。
-          conn_ptr->Shutdown();
-        }
-      });
-    }
+    conn->Shutdown();
   }
 }
