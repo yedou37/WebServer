@@ -72,16 +72,33 @@ HttpContext::LineStatus HttpContext::processHeaders(Buffer* buf) {
     std::string_view value = headerLine.substr(valStart);
 
     request_.AddHeader(key, value);
+    if (key == "Content-Length") {
+      contentLength_ = std::stol(std::string(value));
+    }
 
   } else {
     // 空行，Header 结束
-    state_ = HttpRequestParseState::GOT_ALL;
+    if (contentLength_ > 0) {
+      state_ = HttpRequestParseState::EXPECT_BODY;
+    } else {
+      state_ = HttpRequestParseState::GOT_ALL;
+    }
   }
 
   buf->retrieve(crlf + 2 - buf->peek());
   return LineStatus::OK;
 }
-
+HttpContext::LineStatus HttpContext::processBody(Buffer* buf) {
+  if (buf->readableBytes() >= contentLength_) {
+    std::string body(buf->peek(), contentLength_);
+    request_.SetBody(std::move(body));
+    buf->retrieve(contentLength_);
+    state_ = HttpRequestParseState::GOT_ALL;
+    return LineStatus::OK;
+  }
+  // 数据不够，等待更多数据
+  return LineStatus::MORE_DATA;
+}
 bool HttpContext::ParseRequest(Buffer* buf, Timestamp receiveTime) {
   bool ok = true;
   bool hasMore = true;
@@ -105,6 +122,15 @@ bool HttpContext::ParseRequest(Buffer* buf, Timestamp receiveTime) {
         // 否则继续循环解析下一行 Header
       } else if (status == LineStatus::MORE_DATA) {
         hasMore = false;
+      } else {
+        ok = false;
+        hasMore = false;
+      }
+    } else if (state_ == HttpRequestParseState::EXPECT_BODY) {
+      LineStatus status = processBody(buf);
+      if (status == LineStatus::OK) {
+      } else if (status == LineStatus::MORE_DATA) {
+        hasMore = false;  // 等待下次 TCP 数据
       } else {
         ok = false;
         hasMore = false;
