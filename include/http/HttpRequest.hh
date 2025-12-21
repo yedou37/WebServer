@@ -45,6 +45,7 @@ public:
   [[nodiscard]] const headers_t& GetHeaders() const { return headers_; }
   [[nodiscard]] const std::string& path() const { return path_; }
   [[nodiscard]] const std::string& query() const { return query_; }
+  [[nodiscard]] const std::string& body() const { return body_; }
 
   void reset() {
     method_ = Method::INVALID;

@@ -38,7 +38,8 @@ private:
   bool parseRequestLine(const char* begin, const char* end);
   LineStatus processRequestLine(Buffer* buf);
   LineStatus processHeaders(Buffer* buf);
-
+  LineStatus processBody(Buffer* buf);
   HttpRequestParseState state_{HttpRequestParseState::EXPECT_REQUEST_LINE};
+  size_t contentLength_{0};
   HttpRequest request_;
 };

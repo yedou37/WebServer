@@ -18,7 +18,7 @@ class TCPServer {
 public:
   TCPServer(EventLoop *loop, const InetAddress &listenAddr, std::string nameArg);
   ~TCPServer();
-  DISALLOW_COPY_AND_MOVE(TCPServer)
+  DISALLOW_COPY_AND_MOVE(TCPServer);
   // 调用 Acceptor::listen
   void start();
 
