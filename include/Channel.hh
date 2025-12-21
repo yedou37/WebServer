@@ -8,17 +8,17 @@
 #include "base/Macros.hh"
 #include "base/Timestamp.hh"
 
-class EventLoop;  // 前置声明，避免循环包含
+class EventLoopBase;  // 前置声明，避免循环包含
 
 class Channel {
 public:
   using EventCallback = std::function<void()>;
   using ReadEventCallback = std::function<void(Timestamp)>;  // 读回调包含时间戳
   enum class State : std::uint8_t { kNew, kAdded, kDeleted };
-  Channel(EventLoop *loop, int fd);
+  Channel(EventLoopBase *loop, int fd);
   ~Channel();
 
-  DISALLOW_COPY(Channel);
+  DISALLOW_COPY_AND_MOVE(Channel);
 
   // receiveTime 是 Poller 返回事件的时间点
   void HandleEvent(Timestamp receiveTime);
@@ -57,7 +57,7 @@ public:
   [[nodiscard]] uint32_t GetEvents() const { return events_; }
   void SetRevents(uint32_t revt) { revents_ = revt; }  // 供 Poller 使用
 
-  EventLoop *ownerLoop() { return loop_; }
+  EventLoopBase *ownerLoop() { return loop_; }
 
   // --- 绑定生命周期 ---
   // 防止 Channel 执行回调时，对象(如TcpConnection)已经被销毁
@@ -78,7 +78,7 @@ private:
   static constexpr uint32_t kReadEvent = EPOLLIN | EPOLLPRI;
   static constexpr uint32_t kWriteEvent = EPOLLOUT;
 
-  EventLoop *loop_;
+  EventLoopBase *loop_;
   const fd_t fd_;
 
   uint32_t events_{0};        // 用户关心的事件

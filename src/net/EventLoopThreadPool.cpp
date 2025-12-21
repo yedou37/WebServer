@@ -6,7 +6,7 @@
 #include "EventLoop.hh"
 #include "EventLoopThread.hh"
 
-EventLoopThreadPool::EventLoopThreadPool(EventLoop* baseLoop, std::string nameArg)
+EventLoopThreadPool::EventLoopThreadPool(EventLoopBase* baseLoop, std::string nameArg)
     : baseLoop_(baseLoop), name_(std::move(nameArg)), started_(false), numThreads_(0), next_(0) {}
 
 void EventLoopThreadPool::start(const ThreadInitCallback& cb) {
@@ -31,10 +31,10 @@ void EventLoopThreadPool::start(const ThreadInitCallback& cb) {
   }
 }
 
-EventLoop* EventLoopThreadPool::getNextLoop() {
+EventLoopBase* EventLoopThreadPool::getNextLoop() {
   assert(baseLoop_->IsInEventLoopThread() == true);
   assert(started_);
-  EventLoop* loop = baseLoop_;
+  EventLoopBase* loop = baseLoop_;
 
   // 轮询算法 (Round-Robin)
   if (!loops_.empty()) {
@@ -47,11 +47,11 @@ EventLoop* EventLoopThreadPool::getNextLoop() {
   return loop;
 }
 
-std::vector<EventLoop*> EventLoopThreadPool::getAllLoops() {
+std::vector<EventLoopBase*> EventLoopThreadPool::getAllLoops() {
   assert(baseLoop_->IsInEventLoopThread() == true);
   assert(started_);
   if (loops_.empty()) {
-    return std::vector<EventLoop*>(1, baseLoop_);
+    return std::vector<EventLoopBase*>(1, baseLoop_);
   }
   return loops_;
 }

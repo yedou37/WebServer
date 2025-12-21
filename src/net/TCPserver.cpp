@@ -10,7 +10,7 @@
 #include "EventLoopThreadPool.hh"
 #include "Socket.hh"
 
-TCPServer::TCPServer(EventLoop *loop, const InetAddress &listenAddr, std::string nameArg)
+TCPServer::TCPServer(EventLoopBase *loop, const InetAddress &listenAddr, std::string nameArg)
     : loop_(loop),
       ipPort_(listenAddr.ToIpPort()),
       name_(std::move(nameArg)),
@@ -47,7 +47,7 @@ void TCPServer::newConnection(int sockfd, const InetAddress &peerAddr) {
   assert(loop_->IsInEventLoopThread());
 
   // 使用线程池获取下一个EventLoop
-  EventLoop *ioLoop = threadPool_->getNextLoop();
+  EventLoopBase *ioLoop = threadPool_->getNextLoop();
   std::array<char, 64> buf{};  // NOLINT
   snprintf(buf.data(), buf.size(), "-%s#%d", ipPort_.c_str(), nextConnId_);
   ++nextConnId_;
@@ -91,7 +91,7 @@ void TCPServer::removeConnectionInLoop(const TCPConnectionPtr &conn) {
 
   // 2. 此时 Map 已经不持有 conn 了，但参数 shared_ptr 还在持有
   // 3. 调用 ConnectDestroyed 进行最后清理
-  EventLoop *ioLoop = conn->getLoop();
+  EventLoopBase *ioLoop = conn->getLoop();
   ioLoop->QueueInLoop([conn]() { conn->ConnectDestroyed(); });
 }
 

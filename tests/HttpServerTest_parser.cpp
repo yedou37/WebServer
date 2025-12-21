@@ -1,9 +1,10 @@
-#include <signal.h>
-
+#include <csignal>
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "EventLoop.hh"
+#include "EventLoopFactory.hh"
 #include "InetAddress.hh"
 #include "http/HttpRequest.hh"
 #include "http/HttpResponse.hh"
@@ -29,11 +30,12 @@ void onRequest(const HttpRequest& req, HttpResponse* resp) {
 }
 
 int main(int argc, char* argv[]) {
-  EventLoop loop;
+  auto loopbase = EventLoopFactory::Create(EventLoopType::EPOLL);
+  auto* loop = loopbase.get();
   InetAddress addr("0.0.0.0", 8080);  // NOLINT
   ::signal(SIGPIPE, SIG_IGN);
   // 创建 Server
-  HttpServer server(&loop, addr, "MyHttpServer");
+  HttpServer server(loop, addr, "MyHttpServer");
 
   // 1. 设置回调
   server.setHttpCallback(onRequest);
@@ -46,6 +48,6 @@ int main(int argc, char* argv[]) {
 
   std::cout << "Server is running on port 8080..." << '\n';
 
-  loop.Loop();
+  loop->Loop();
   return 0;
 }

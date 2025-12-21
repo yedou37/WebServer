@@ -4,6 +4,7 @@
 
 #include "Acceptor.hh"
 #include "EventLoop.hh"
+#include "EventLoopFactory.hh"
 #include "InetAddress.hh"
 
 // 模拟 TcpServer 的回调行为
@@ -24,9 +25,9 @@ int main() {
   std::cout << "main(): starting" << '\n';
 
   InetAddress listenAddr("0.0.0.0", 8888);  // NOLINT
-  EventLoop loop;
+  auto loop = EventLoopFactory::Create(EventLoopType::EPOLL);
 
-  Acceptor acceptor(&loop, listenAddr, true);
+  Acceptor acceptor(loop.get(), listenAddr, true);
 
   // 设置回调
   acceptor.SetNewConnectionCallback(newConnection);
@@ -36,7 +37,7 @@ int main() {
   std::cout << "Acceptor is listening on port 8888..." << '\n';
 
   // 启动循环
-  loop.Loop();
+  loop->Loop();
 
   return 0;
 }

@@ -1,9 +1,9 @@
 #include <cstdio>
 #include <thread>
 
-#include "EventLoop.hh"
+#include "EpollEventLoop.hh"
 
-EventLoop* g_loop;
+EpollEventLoop* g_loop;
 
 void threadFunc() {
   printf("子线程: 等待5秒...\n");
@@ -17,7 +17,7 @@ void threadFunc() {
 }
 
 int main() {
-  EventLoop loop;
+  EpollEventLoop loop;
   g_loop = &loop;
 
   std::thread t(threadFunc);

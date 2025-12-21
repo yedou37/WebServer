@@ -8,11 +8,11 @@
 class HttpServer {
 public:
   using HttpCallback = std::function<void(const HttpRequest&, HttpResponse*)>;
-  HttpServer(EventLoop* loop, const InetAddress& listenAddr, const std::string& name);
+  HttpServer(EventLoopBase* loop, const InetAddress& listenAddr, const std::string& name);
 
   ~HttpServer();
 
-  [[nodiscard]] EventLoop* getLoop() const { return server_.getLoop(); }
+  [[nodiscard]] EventLoopBase* getLoop() const { return server_.getLoop(); }
 
   void setHttpCallback(const HttpCallback& cb) { httpCallback_ = cb; }
 

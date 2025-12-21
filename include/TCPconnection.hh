@@ -9,15 +9,16 @@
 #include "Buffer.hh"
 #include "Channel.hh"
 #include "EventLoop.hh"
+#include "EventLoopBase.hh"
 #include "InetAddress.hh"
 #include "Socket.hh"
 #include "base/Callbacks.hh"
 #include "base/Macros.hh"
 class InetAddress;
-class EventLoop;
+class EventLoopBase;
 class TCPConnection : public std::enable_shared_from_this<TCPConnection> {
 public:
-  TCPConnection(EventLoop *loop, std::string nameArg, fd_t sockfd, const InetAddress &local_addr,
+  TCPConnection(EventLoopBase *loop, std::string nameArg, fd_t sockfd, const InetAddress &local_addr,
                 const InetAddress &peer_addr);
 
   DISALLOW_COPY(TCPConnection);
@@ -28,7 +29,7 @@ public:
   void Send(Buffer *buf);
   void Shutdown();
 
-  EventLoop *getLoop() const { return loop_; }
+  EventLoopBase *getLoop() const { return loop_; }
   const std::string &name() const { return name_; }
   const InetAddress &localAddress() const { return local_addr_; }
   const InetAddress &peerAddress() const { return peer_addr_; }
@@ -52,7 +53,7 @@ private:
   void shutdownInLoop();
 
   void setState(State s) { state_.store(s); }
-  EventLoop *loop_;
+  EventLoopBase *loop_;
   const std::string name_;
   std::atomic<State> state_;
   std::unique_ptr<Socket> socket_;

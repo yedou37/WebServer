@@ -4,13 +4,13 @@
 
 #include <cassert>
 
-#include "EventLoop.hh"  // 必须包含，因为要调用 loop_->UpdateChannel
+#include "EpollEventLoop.hh"  // 必须包含，因为要调用 loop_->UpdateChannel
 
-Channel::Channel(EventLoop* loop, fd_t fd) : loop_(loop), fd_(fd) {}
+Channel::Channel(EventLoopBase* loop, fd_t fd) : loop_(loop), fd_(fd) {}
 
 Channel::~Channel() {
   // 确保 Channel析构时，它不在 EventLoop 的 Poller 中
-  assert(!loop_->HasChannel(this));
+  assert(!static_cast<EpollEventLoop*>(loop_)->HasChannel(this));
 }
 
 void Channel::Tie(const std::shared_ptr<void>& obj) {
@@ -19,9 +19,11 @@ void Channel::Tie(const std::shared_ptr<void>& obj) {
 }
 
 void Channel::Update() {
+  // 确保 loop_ 实际上是 EpollEventLoop 类型
   // 调用 EventLoop => Poller => epoll_ctl
   loop_->UpdateChannel(this);
 }
+
 void Channel::Remove() {
   assert(IsNoneEvent());
   loop_->RemoveChannel(this);

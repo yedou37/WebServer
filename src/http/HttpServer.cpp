@@ -10,7 +10,7 @@ void defaultHttpCallback(const HttpRequest& req, HttpResponse* resp) {
   resp->SetCloseConnection(true);
 }
 
-HttpServer::HttpServer(EventLoop* loop, const InetAddress& listenAddr, const std::string& name)
+HttpServer::HttpServer(EventLoopBase* loop, const InetAddress& listenAddr, const std::string& name)
     : server_(loop, listenAddr, name),
       httpCallback_(defaultHttpCallback)  // 初始化为默认回调
 {

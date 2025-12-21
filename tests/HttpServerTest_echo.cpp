@@ -3,6 +3,7 @@
 
 #include "Buffer.hh"
 #include "EventLoop.hh"
+#include "EventLoopFactory.hh"
 #include "InetAddress.hh"
 #include "TCPconnection.hh"
 #include "TCPserver.hh"
@@ -42,9 +43,9 @@ void onMessage(const TCPConnectionPtr& conn, Buffer* buf, Timestamp time) {
 
 int main() {
   ::signal(SIGPIPE, SIG_IGN);
-  EventLoop loop;
+  auto loop = EventLoopFactory::Create(EventLoopType::EPOLL);
   InetAddress addr("0.0.0.0", 8080);  // NOLINT 监听 8080 端口，这是 HTTP 服务常用端口
-  TCPServer server(&loop, addr, "MyHttpServer");
+  TCPServer server(loop.get(), addr, "MyHttpServer");
   server.setThreadNum(8);  // NOLINT
   // 注册用户回调
   server.setConnectionCallback(onConnection);
@@ -55,7 +56,7 @@ int main() {
   std::cout << "HTTP Server started on port 8080..." << '\n';
 
   // 进入事件循环
-  loop.Loop();
+  loop->Loop();
 
   return 0;
 }

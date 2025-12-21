@@ -6,9 +6,9 @@
 
 #include <cassert>
 
+#include "EventLoopBase.hh"
 #include "base/Timestamp.hh"
-
-Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr, bool reuseport)
+Acceptor::Acceptor(EventLoopBase* loop, const InetAddress& listenAddr, bool reuseport)
     : loop_(loop),
       acceptChannel_(loop, acceptSocket_.fd()),
       listenning_(false),

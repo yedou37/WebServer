@@ -8,6 +8,7 @@
 
 #include "Acceptor.hh"
 #include "EventLoop.hh"
+#include "EventLoopBase.hh"
 #include "EventLoopThreadPool.hh"
 #include "InetAddress.hh"
 #include "TCPconnection.hh"
@@ -16,7 +17,7 @@
 
 class TCPServer {
 public:
-  TCPServer(EventLoop *loop, const InetAddress &listenAddr, std::string nameArg);
+  TCPServer(EventLoopBase *loop, const InetAddress &listenAddr, std::string nameArg);
   ~TCPServer();
   DISALLOW_COPY_AND_MOVE(TCPServer);
   // 调用 Acceptor::listen
@@ -29,7 +30,7 @@ public:
 
   // 设置线程池数量
   void setThreadNum(int numThreads);
-  [[nodiscard]] EventLoop *getLoop() const { return loop_; }
+  [[nodiscard]] EventLoopBase *getLoop() const { return loop_; }
 
 private:
   // 当 Acceptor 接收到新连接时调用此函数
@@ -41,7 +42,7 @@ private:
 
   using ConnectionMap = std::map<std::string, TCPConnectionPtr>;
 
-  EventLoop *loop_;  // baseLoop
+  EventLoopBase *loop_;  // baseLoop
   const std::string ipPort_;
   const std::string name_;
 

@@ -1,4 +1,4 @@
-#include "EventLoop.hh"
+#include "EpollEventLoop.hh"
 
 #include <sys/eventfd.h>
 #include <unistd.h>
@@ -9,16 +9,16 @@
 #include "Epoll.hh"
 #include "base/Timestamp.hh"
 
-static fd_t CreateEventfd() {
+static int CreateEventfd() {
   int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (evtfd < 0) {
-    perror("eventfd error");
+    perror("Failed in eventfd");
     abort();
   }
   return evtfd;
 }
 
-EventLoop::EventLoop()
+EpollEventLoop::EpollEventLoop()
     : tid_(CurrentThread::tid()),
       epoll_(std::make_unique<Epoll>()),
       wakeupFd_(CreateEventfd()),
@@ -29,14 +29,16 @@ EventLoop::EventLoop()
   wakeupChannel_->EnableRead();
 }
 
-EventLoop::~EventLoop() {
+EpollEventLoop::~EpollEventLoop() {
   // 先 disable，再 remove，最后 close fd
   wakeupChannel_->DisableAll();
   wakeupChannel_->Remove();
   ::close(wakeupFd_);
 }
 
-void EventLoop::Loop() {
+void EpollEventLoop::Loop() {
+  assert(!looping_);
+  assert(IsInEventLoopThread());
   looping_.store(true);
   quit_.store(false);
 
@@ -45,7 +47,7 @@ void EventLoop::Loop() {
     // 阻塞等待事件
     auto ts = epoll_->poll(kPollTimeMs, &activeChannels_);
 
-    for (auto *channel : activeChannels_) {
+    for (auto* channel : activeChannels_) {
       channel->HandleEvent(ts);
     }
     // 执行任务队列
@@ -54,15 +56,16 @@ void EventLoop::Loop() {
   looping_.store(false);
 }
 
-void EventLoop::Quit() {
+void EpollEventLoop::Quit() {
   quit_.store(true);
-  // 如果是在其他线程调用 Quit，必须唤醒 Loop 才能让它跳出 while 检查 quit_
+  // 如果是在其他线程调用 Quit，必须唤醒
+  // 否则需要等到下一轮 poll 超时才退出
   if (!IsInEventLoopThread()) {
     Wakeup();
   }
 }
 
-void EventLoop::RunInLoop(Functor cb) {
+void EpollEventLoop::RunInLoop(Functor cb) {
   if (IsInEventLoopThread()) {
     cb();
   } else {
@@ -70,35 +73,37 @@ void EventLoop::RunInLoop(Functor cb) {
   }
 }
 
-void EventLoop::Wakeup() const {
+void EpollEventLoop::Wakeup() const {
   uint64_t one = 1;
   ssize_t n = ::write(wakeupFd_, &one, sizeof one);
   if (n != sizeof(one)) {
-    perror("EventLoop::Wakeup() writes mismatch");
+    perror("EventLoop::wakeup() writes");
   }
 }
 
-void EventLoop::HandleRead() const {
+void EpollEventLoop::HandleRead() const {
   uint64_t one = 1;
   ssize_t n = ::read(wakeupFd_, &one, sizeof one);
   if (n != sizeof(one)) {
-    perror("EventLoop::HandleRead() reads mismatch");
+    perror("EventLoop::handleRead() reads");
   }
 }
 
-void EventLoop::UpdateChannel(Channel *channel) {
+void EpollEventLoop::UpdateChannel(Channel* channel) {
   assert(channel->ownerLoop() == this);
   epoll_->UpdateChannel(channel);
 }
 
-void EventLoop::RemoveChannel(Channel *channel) {
+void EpollEventLoop::RemoveChannel(Channel* channel) {
   assert(channel->ownerLoop() == this);
   epoll_->RemoveChannel(channel);
 }
-bool EventLoop::HasChannel(Channel *channel) const {
+
+bool EpollEventLoop::HasChannel(Channel* channel) const {
   return epoll_->HasChannel(channel);
 }
-void EventLoop::QueueInLoop(Functor cb) {
+
+void EpollEventLoop::QueueInLoop(Functor cb) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     pendingFunctors_.emplace_back(std::move(cb));
@@ -111,7 +116,7 @@ void EventLoop::QueueInLoop(Functor cb) {
   }
 }
 
-void EventLoop::DoPendingFunctors() {
+void EpollEventLoop::DoPendingFunctors() {
   std::vector<Functor> functors;
   callingPendingFunctors_ = true;
 
@@ -120,7 +125,7 @@ void EventLoop::DoPendingFunctors() {
     functors.swap(pendingFunctors_);
   }
 
-  for (const auto &functor : functors) {
+  for (const auto& functor : functors) {
     functor();
   }
   callingPendingFunctors_ = false;

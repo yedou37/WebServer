@@ -10,7 +10,7 @@
 #include "Socket.hh"
 #include "base/Macros.hh"
 
-TCPConnection::TCPConnection(EventLoop* loop, std::string nameArg, fd_t sockfd,
+TCPConnection::TCPConnection(EventLoopBase* loop, std::string nameArg, fd_t sockfd,
                              const InetAddress& local_addr,  // NOLINT
                              const InetAddress& peer_addr)   // NOLINT
     : loop_(loop),

@@ -2,6 +2,7 @@
 
 #include "Buffer.hh"
 #include "EventLoop.hh"
+#include "EventLoopFactory.hh"
 #include "InetAddress.hh"
 #include "TCPconnection.hh"
 #include "TCPserver.hh"
@@ -30,9 +31,9 @@ void onMessage(const TCPConnectionPtr& conn, Buffer* buf, Timestamp time) {
 }
 
 int main() {
-  EventLoop loop;
+  auto loop = EventLoopFactory::Create(EventLoopType::EPOLL);
   InetAddress addr("0.0.0.0", 8000);  // NOLINT 监听 8000 端口
-  TCPServer server(&loop, addr, "MyEchoServer");
+  TCPServer server(loop.get(), addr, "MyEchoServer");
 
   // 注册用户回调
   server.setConnectionCallback(onConnection);
@@ -43,7 +44,7 @@ int main() {
   std::cout << "Server started on port 8000..." << '\n';
 
   // 进入事件循环
-  loop.Loop();
+  loop->Loop();
 
   return 0;
 }
