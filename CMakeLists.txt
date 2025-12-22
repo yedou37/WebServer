@@ -8,22 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 禁用编译器特定的扩展 (如 gnu++20)，强制使用标准 ISO C++
 set(CMAKE_CXX_EXTENSIONS OFF) 
 
-# 添加io_uring支持选项
-option(USE_IO_URING "Enable io_uring support" OFF)
+option(USE_IO_URING "Enable io_uring support" ON)
 
-# 检查io_uring可用性
-if(USE_IO_URING)
-  find_path(LIBURING_INCLUDE_DIR NAMES liburing.h)
-  find_library(LIBURING_LIBRARY NAMES uring)
-  
-  if(LIBURING_INCLUDE_DIR AND LIBURING_LIBRARY)
-    message(STATUS "Found liburing: ${LIBURING_LIBRARY}")
-    add_definitions(-DUSE_IO_URING)
-    include_directories(${LIBURING_INCLUDE_DIR})
-  else()
-    message(FATAL_ERROR "liburing not found but USE_IO_URING was set to ON")
-  endif()
-endif()
+
 
 # 2. 设置输出目录
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -68,6 +55,7 @@ add_executable(AcceptorTest tests/AcceptorTest.cpp
                              src/net/InetAddress.cpp
                              src/net/EpollEventLoop.cpp
                              src/net/EventLoopFactory.cpp
+                             src/net/IOUringEventLoop.cpp
                              src/net/Channel.cpp 
                              src/net/Epoll.cpp
                              src/base/Timestamp.cpp
@@ -80,6 +68,7 @@ add_executable(TCPServerTest tests/TCPServerTest.cpp
                               src/net/TCPconnection.cpp
                               src/net/Acceptor.cpp
                               src/net/Socket.cpp
+                             src/net/IOUringEventLoop.cpp
                               src/net/InetAddress.cpp
                               src/net/EpollEventLoop.cpp
                               src/net/EventLoopThread.cpp
@@ -104,6 +93,7 @@ add_executable(HttpServerTest tests/HttpServerTest_echo.cpp
                               src/net/EventLoopThreadPool.cpp
                               src/net/EventLoopFactory.cpp
                               src/net/Channel.cpp
+                             src/net/IOUringEventLoop.cpp
                               src/net/Epoll.cpp
                               src/base/Timestamp.cpp
                               src/base/CurrentThread.cpp
@@ -117,6 +107,7 @@ add_executable(HttpServerTest_parser tests/HttpServerTest_parser.cpp
                                      src/net/Acceptor.cpp
                                      src/net/Socket.cpp
                                      src/net/InetAddress.cpp
+                             src/net/IOUringEventLoop.cpp
                                      src/net/EpollEventLoop.cpp
                                      src/net/EventLoopThread.cpp
                                      src/net/EventLoopThreadPool.cpp
@@ -133,13 +124,19 @@ add_executable(HttpServerTest_parser tests/HttpServerTest_parser.cpp
 target_include_directories(HttpServerTest_parser PRIVATE src/net src/base src/http)
 
 target_link_libraries(Janus pthread)
-if(USE_IO_URING)
-  target_link_libraries(Janus ${LIBURING_LIBRARY})
-endif()
+
+target_link_libraries(Janus uring) 
+
 
 target_link_libraries(SocketTest pthread)
+target_link_libraries(SocketTest uring) 
 target_link_libraries(EventLoopTest pthread)
+target_link_libraries(EventLoopTest uring)
 target_link_libraries(AcceptorTest pthread)
+target_link_libraries(AcceptorTest uring)
 target_link_libraries(TCPServerTest pthread)
+target_link_libraries(TCPServerTest uring)
 target_link_libraries(HttpServerTest pthread)
+target_link_libraries(HttpServerTest uring)
 target_link_libraries(HttpServerTest_parser pthread)
+target_link_libraries(HttpServerTest_parser uring)

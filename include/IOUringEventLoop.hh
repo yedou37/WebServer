@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EventLoopBase.hh"
+#include <liburing.h>
 
 #include <atomic>
 #include <functional>
@@ -8,20 +8,18 @@
 #include <mutex>
 #include <vector>
 
+#include "EventLoopBase.hh"
 #include "base/CurrentThread.hh"
 #include "base/Macros.hh"
 #include "base/Timestamp.hh"
 
-#ifdef USE_IO_URING
-#include <liburing.h>
-#endif
-
 class Channel;
 
 class IOUringEventLoop : public EventLoopBase {
- public:
+public:
   using Functor = std::function<void()>;
 
+  using ChannelList = std::vector<Channel*>;
   IOUringEventLoop();
   ~IOUringEventLoop() override;
 
@@ -37,11 +35,10 @@ class IOUringEventLoop : public EventLoopBase {
 
   [[nodiscard]] bool IsInEventLoopThread() const override { return tid_ == CurrentThread::tid(); }
 
-#ifdef USE_IO_URING
   struct io_uring* GetRing() { return &ring_; }
-#endif
+  struct io_uring_sqe* GetSqe();
 
- private:
+private:
   void Wakeup() const;
   void HandleRead() const;
   void DoPendingFunctors();
@@ -56,10 +53,8 @@ class IOUringEventLoop : public EventLoopBase {
   std::mutex mutex_;
   std::vector<Functor> pendingFunctors_;
   bool callingPendingFunctors_{false};
-
-#ifdef USE_IO_URING
+  std::unordered_map<int, Channel*> channels_;
   struct io_uring ring_;
-#endif
 
   DISALLOW_COPY_AND_MOVE(IOUringEventLoop);
 };

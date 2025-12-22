@@ -30,7 +30,7 @@ void onRequest(const HttpRequest& req, HttpResponse* resp) {
 }
 
 int main(int argc, char* argv[]) {
-  auto loopbase = EventLoopFactory::Create(EventLoopType::EPOLL);
+  auto loopbase = EventLoopFactory::Create(EventLoopType::IO_URING);
   auto* loop = loopbase.get();
   InetAddress addr("0.0.0.0", 8080);  // NOLINT
   ::signal(SIGPIPE, SIG_IGN);
