@@ -12,19 +12,16 @@ void httpCallback(const HttpRequest& req, HttpResponse* resp) {
 }
 
 int main() {
-  // 使用学号的后4位作为服务器的监听端口: 1885
-  constexpr InetAddress::port_t port = 1885;
+  constexpr InetAddress::port_t port = 31885;
   InetAddress listenAddr("0.0.0.0", port);
 
-  std::cout << "Starting HTTP server on port " << port << std::endl;
+  std::cout << "Starting HTTP server on port " << port << '\n';
 
   EventLoop loop;
   HttpServer server(&loop, listenAddr, "HomeworkServer");
 
-  // 注册我们的处理函数
   server.setHttpCallback(httpCallback);
 
-  // 启动服务器
   server.start();
   loop.Loop();
 
