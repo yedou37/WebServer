@@ -18,16 +18,14 @@ EventLoop* EventLoopThread::startLoop() {
   // 启动新线程，执行 threadFunc
   thread_ = std::thread([this]() { threadFunc(); });
 
-  EventLoop* loop = nullptr;
   {
     // 等待新线程创建 EventLoop 完毕
     std::unique_lock<std::mutex> lock(mutex_);
     while (loop_ == nullptr) {
       cond_.wait(lock);
     }
-    loop = loop_;
   }
-  return loop;
+  return loop_;
 }
 
 // 这个方法在【新线程】中运行
