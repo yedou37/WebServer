@@ -1,61 +1,62 @@
 #pragma once
+#include <atomic>
 #include <condition_variable>
+#include <cstddef>
 #include <cstring>
 #include <fstream>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "base/Macros.hh"
+
 class AsyncLogger {
 private:
-  static constexpr size_t BUFFER_SIZE = 4096;
+  static constexpr size_t BUFFER_SIZE = static_cast<const size_t>(1024 * 1024);
 
   struct Buffer {
     char data[BUFFER_SIZE];  // NOLINT
     size_t current{0};
 
-    bool append(const char* msg, size_t len) {
-      if (current + len > BUFFER_SIZE) {
-        return false;  // 缓冲区满了
-      }
-      memcpy(data + current, msg, len);
+    [[nodiscard]] size_t avail() const { return BUFFER_SIZE - current; }
+    void append(const char* msg, size_t len) {
+      std::memcpy(data + current, msg, len);
       current += len;
-      return true;
     }
-
     void clear() { current = 0; }
+    [[nodiscard]] bool empty() const { return current == 0; }
   };
 
+  using BufferPtr = std::unique_ptr<Buffer>;
+
 public:
-  explicit AsyncLogger(const std::string& filename);
+  explicit AsyncLogger(std::string_view filename);
   ~AsyncLogger();
 
-  void log(const std::string& message);
+  DISALLOW_COPY(AsyncLogger);
+  void log(std::string_view sv) { log(sv.data(), sv.size()); }
+  void log(const char* msg, size_t len);
 
 private:
   void backendThread();
 
-  // 双缓冲区
-  Buffer bufferA_;
-  Buffer bufferB_;
-  Buffer* currentBuffer_;  // 前台正在写的缓冲区
-  Buffer* backupBuffer_;   // 后台准备写的缓冲区
-
-  // 同步机制
-  std::mutex mutex_;
-  std::condition_variable condition_;
-  bool quit_ = false;
-
-  // 后台线程
-  std::thread backendThread_;
+  std::atomic<bool> running_{true};
+  std::string filename_;
   std::ofstream file_;
+  std::thread thread_;
+  std::mutex mutex_;
+  std::condition_variable cond_;
+
+  BufferPtr currentBuffer_;         // 当前缓冲区
+  BufferPtr nextBuffer_;            // 预备缓冲区
+  std::vector<BufferPtr> buffers_;  // 待写入文件的缓冲区队列
 };
 
-// 便捷宏
-#define ASYNC_LOG(logger, format, ...)                       \
-  do {                                                       \
-    char buffer[1024];                                       \
-    snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
-    logger.log(std::string(buffer));                         \
+#define ASYNC_LOG(logger, format, ...)                         \
+  do {                                                         \
+    char buf[1024];                                            \
+    int n = snprintf(buf, sizeof(buf), format, ##__VA_ARGS__); \
+    if (n > 0) logger.log(buf, static_cast<size_t>(n));        \
   } while (0)

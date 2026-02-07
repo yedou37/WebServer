@@ -1,5 +1,6 @@
 #include "http/HttpServer.hh"
 
+#include "base/Logger.hh"
 #include "http/HttpContext.hh"
 #include "http/HttpRequest.hh"
 #include "http/HttpResponse.hh"
@@ -30,6 +31,7 @@ void HttpServer::start() {
 
 void HttpServer::onConnection(const TCPConnectionPtr& conn) {  // NOLINT
   if (conn->connected()) {
+    LOG_INFO("New connection from %s", conn->peerAddress().ToIpPort().c_str());
     conn->setContext(HttpContext());
   }
 }

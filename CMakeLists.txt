@@ -27,9 +27,11 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/src) 
 
-# Main executable
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(Janus ${SOURCES})
+
+# 确保包含正确的头文件路径
+target_include_directories(Janus PRIVATE src)
 
 # Socket test executable
 add_executable(SocketTest tests/SocketTest.cpp src/net/Socket.cpp src/net/InetAddress.cpp)
@@ -41,7 +43,9 @@ add_executable(EventLoopTest tests/EventLoopTest.cpp
                                  src/net/Channel.cpp 
                                  src/net/Epoll.cpp
                                  src/base/Timestamp.cpp
-                                 src/base/CurrentThread.cpp)
+                                 src/base/CurrentThread.cpp
+                                 src/base/Logger.cpp       # 添加Logger
+                                 src/base/AsyncLogger.cpp) # 添加AsyncLogger
 target_include_directories(EventLoopTest PRIVATE src/net src/base)
 
 # Acceptor test executable
@@ -53,7 +57,9 @@ add_executable(AcceptorTest tests/AcceptorTest.cpp
                              src/net/Channel.cpp
                              src/net/Epoll.cpp
                              src/base/Timestamp.cpp
-                             src/base/CurrentThread.cpp)
+                             src/base/CurrentThread.cpp
+                             src/base/Logger.cpp       # 添加Logger
+                             src/base/AsyncLogger.cpp) # 添加AsyncLogger
 target_include_directories(AcceptorTest PRIVATE src/net src/base)
 
 # TCPServer test executable
@@ -70,7 +76,9 @@ add_executable(TCPServerTest tests/TCPServerTest.cpp
                               src/net/Epoll.cpp
                               src/base/Timestamp.cpp
                               src/base/CurrentThread.cpp
-                              src/base/Buffer.cpp)
+                              src/base/Buffer.cpp
+                              src/base/Logger.cpp       # 添加Logger
+                              src/base/AsyncLogger.cpp) # 添加AsyncLogger
 target_include_directories(TCPServerTest PRIVATE src/net src/base)
 
 # HTTP Server test executable
@@ -87,7 +95,9 @@ add_executable(HttpServerTest tests/HttpServerTest_echo.cpp
                               src/net/Epoll.cpp
                               src/base/Timestamp.cpp
                               src/base/CurrentThread.cpp
-                              src/base/Buffer.cpp)
+                              src/base/Buffer.cpp
+                              src/base/Logger.cpp       # 添加Logger
+                              src/base/AsyncLogger.cpp) # 添加AsyncLogger
 target_include_directories(HttpServerTest PRIVATE src/net src/base)
 
 # HTTP Server parser test executable
@@ -108,9 +118,12 @@ add_executable(HttpServerTest_parser tests/HttpServerTest_parser.cpp
                                      src/http/HttpContext.cpp
                                      src/http/HttpRequest.cpp
                                      src/http/HttpResponse.cpp
-                                     src/http/HttpServer.cpp)
+                                     src/http/HttpServer.cpp
+                                     src/base/Logger.cpp       # 添加Logger
+                                     src/base/AsyncLogger.cpp) # 添加AsyncLogger
 target_include_directories(HttpServerTest_parser PRIVATE src/net src/base src/http)
 
+# 为主可执行文件添加链接库
 target_link_libraries(Janus pthread)
 target_link_libraries(SocketTest pthread)
 target_link_libraries(EventLoopTest pthread)

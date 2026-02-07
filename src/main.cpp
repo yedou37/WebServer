@@ -1,69 +1,50 @@
-#include <unistd.h>  // for read, write, close
-
-#include <array>
-#include <cstring>  // for memset
+#include <csignal>
 #include <iostream>
+#include <string>
 
+#include "EventLoop.hh"
 #include "InetAddress.hh"
-#include "Socket.hh"
-
-void test_server() {
-  std::cout << "[DEBUG] Starting test server...\n";
-
-  try {
-    // 1. Create server address object (127.0.0.1 : 8080)
-    constexpr InetAddress::port_t port = 8080;
-    InetAddress localAddr("127.0.0.1", port);
-    std::cout << "[DEBUG] Address created: " << localAddr.ToIpPort() << '\n';
-
-    // 2. Create listening Socket
-    Socket listenSocket;
-
-    // 3. Set options (reuse address and port to prevent 'Address already in use' on restart)
-    listenSocket.setReuseAddr(true);
-    listenSocket.setReusePort(true);
-
-    // 4. Bind address
-    listenSocket.bindAddress(localAddr);
-    std::cout << "[DEBUG] Bind success.\n";
-
-    // 5. Start listening
-    listenSocket.listen();
-    std::cout << "[DEBUG] Listening on " << localAddr.ToIpPort() << "...\n";
-
-    // 6. Accept connection (blocking operation until client connects)
-    InetAddress clientAddr;
-    fd_t connfd = listenSocket.accept(&clientAddr);
-    Socket connSocket(connfd);
-    if (connfd >= 0) {
-      std::cout << "[DEBUG] Connection accepted!\n";
-      std::cout << "[DEBUG] Client Address: " << clientAddr.ToIpPort() << '\n';
-
-      // 7. Simple read/write test
-      constexpr size_t BUFFER_SIZE = 1024;
-      std::array<char, BUFFER_SIZE> buf{};
-
-      // Read data
-      ssize_t n = connSocket.read(buf.data(), buf.size());
-      if (n > 0) {
-        std::cout << "[DEBUG] Received " << n << " bytes: " << buf.data() << '\n';
-
-        std::string msg = "Hello from your WebServer Socket wrapper!\n";
-        connSocket.write(msg.c_str(), msg.size());
-      } else {
-        std::cout << "[DEBUG] Client disconnected or read error.\n";
-      }
-
-    } else {
-      std::cerr << "[ERROR] Accept failed.\n";
-    }
-
-  } catch (const std::exception& e) {
-    std::cerr << "[EXCEPTION] " << e.what() << '\n';
+#include "base/Logger.hh"
+#include "http/HttpRequest.hh"
+#include "http/HttpResponse.hh"
+#include "http/HttpServer.hh"
+// 业务逻辑回调函数
+void onRequest(const HttpRequest& req, HttpResponse* resp) {
+  if (req.path() == "/") {
+    resp->SetStatusCode(HttpResponse::HttpStatusCode::k200Ok);
+    resp->SetStatusMessage("OK");
+    resp->SetContentType("text/html");
+    resp->SetBody("<h1>Hello, High Performance C++ Server!</h1>");
+  } else if (req.path() == "/hello") {
+    resp->SetStatusCode(HttpResponse::HttpStatusCode::k200Ok);
+    resp->SetContentType("text/plain");
+    resp->SetBody("Hello World");
+  } else {
+    resp->SetStatusCode(HttpResponse::HttpStatusCode::k404NotFound);
+    resp->SetStatusMessage("Not Found");
+    resp->SetBody("404 Not Found");
+    resp->SetCloseConnection(true);
   }
 }
 
-int main() {
-  test_server();
+int main(int argc, char* argv[]) {
+  Logger::instance().initAsyncLog("test.log");
+  LOG_INFO("init async log");
+  EventLoop loop;
+  InetAddress addr("0.0.0.0", 8080);  // NOLINT
+  ::signal(SIGPIPE, SIG_IGN);
+  // 创建 Server
+  HttpServer server(&loop, addr, "MyHttpServer");
+  LOG_INFO("Server listening: ip: %s, port: %d", addr.ToIp().c_str(), addr.ToPort());
+  // 1. 设置回调
+  server.setHttpCallback(onRequest);
+
+  // 2. 设置线程数
+  server.setThreadNum(8);  // NOLINT
+  LOG_INFO("Server started. %d threads started", 8);
+  // 3. 启动
+  server.start();
+
+  loop.Loop();
   return 0;
 }
