@@ -82,7 +82,7 @@ void Epoll::UpdateChannel(Channel* channel) {
 void Epoll::RemoveChannel(Channel* channel) {
   int fd = channel->Getfd();
   assert(channel->IsNoneEvent());
-  if (channels_.find(fd) != channels_.end()) {
+  if (channels_.contains(fd)) {
     size_t n = channels_.erase(fd);
     (void)n;  // 防止 Release 模式下未使用变量的警告
     assert(n == 1);
